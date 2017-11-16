@@ -78,7 +78,7 @@ nyc_inspections = get_all_inspections(url) %>%
          violation_description) %>% 
   filter(year == "2016",
          score > "0") %>% 
-  sample_n(1000)
+sample_n(20000)
 ##final dataset
 
 
@@ -91,7 +91,7 @@ Column {.sidebar}
 -----------------------------------------------------------------------
 
 ```{r}
-boroughs = nyc_inspections %>% distinct(borough) %>% pull()
+borough = nyc_inspections %>% distinct(borough) %>% pull()
 
 # selectInput widget
 selectInput("borough", label = h3("Select borough"),
