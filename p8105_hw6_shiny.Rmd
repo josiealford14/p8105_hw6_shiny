@@ -143,7 +143,6 @@ nyc_inspections %>%
 ### Chart C
 
 ```{r barplot}
-
 renderPlotly({ 
 ##addtl dataset for josie
 top_cuisines = nyc_inspections %>%
