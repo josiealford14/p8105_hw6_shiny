@@ -13,23 +13,76 @@ library(flexdashboard)
 
 ```{r}
 library(tidyverse)
-library(janitor)
-library(stringr)
-library(forcats)
-library(viridis)
+library(httr)
+library(jsonlite)
 library(plotly)
+library(lubridate)
+library(forcats)
+library(stringr)
+library(viridis)
+library(ggplot2)
+library(dplyr)
 library(shiny)
 ```
 
 ```{r}
-set.seed(1)
+##load data
+get_all_inspections = function(url) {
+  
+  all_inspections = vector("list", length = 0)
+  
+  loop_index = 1
+  chunk_size = 50000
+  DO_NEXT = TRUE
+  
+  while (DO_NEXT) {
+    message("Getting data, page ", loop_index)
+    
+    all_inspections[[loop_index]] = 
+      GET(url,
+          query = list(`$order` = "zipcode",
+                       `$limit` = chunk_size,
+                       `$offset` = as.integer((loop_index - 1) * chunk_size)
+                       )
+          ) %>%
+      content("text") %>%
+      fromJSON() %>%
+      as_tibble()
+    
+    DO_NEXT = dim(all_inspections[[loop_index]])[1] == chunk_size
+    loop_index = loop_index + 1
+  }
+  
+  all_inspections
+  
+}
 
-airbnb_data = read_csv("./data/nyc_airbnb.zip") %>%
-  clean_names() %>%
-  mutate(rating = review_scores_location / 2) %>%
-  select(boro = neighbourhood_group, neighbourhood, rating, price, room_type,
-         latitude, longitude) %>%
-  filter(!is.na(rating))
+url = "https://data.cityofnewyork.us/resource/9w7m-hzhe.json"
+
+nyc_inspections = get_all_inspections(url) %>%
+  bind_rows() %>% 
+  as.data.frame() %>% 
+  filter(grade %in% c("A", "B", "C"), boro != "Missing") %>% 
+  separate(grade_date, into = c("grade_date", "takeaway"), sep = "T") %>%
+  select(-takeaway) %>% 
+  separate(grade_date, into = c("year", "month", "day"), sep = "-") %>%
+  mutate(month = as.numeric(month),
+         month = as.factor(month)) %>% 
+  mutate(cuisine_description = recode(cuisine_description, "CafÃ©/Coffee/Tea" = "Cafe", "Latin (Cuban, Dominican, Puerto Rican, South & Central American)" = "Latin")) %>%
+  rename(name = dba,
+         borough = boro) %>% 
+  na.omit(grade) %>% 
+  mutate(score = as.numeric(score),
+         borough = str_to_title(borough)) %>%
+  select(camis, year, month, day, borough, name, cuisine_description, score, grade, 
+         violation_description) %>% 
+  filter(year == "2016",
+         score > "0")
+##final dataset
+
+
+
+
 ```
 
 
