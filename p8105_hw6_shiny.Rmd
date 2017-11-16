@@ -78,14 +78,14 @@ nyc_inspections = get_all_inspections(url) %>%
          violation_description) %>% 
   filter(year == "2016",
          score > "0") %>% 
-sample_n(20000)
+sample_n(10000)
 ##final dataset
 ```
 
 
 Column {.sidebar}
 -----------------------------------------------------------------------
-
+This `flexdashboard` with Shiny was made using openly available 2016 NYC Health Inspection restaurant [data](https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/xx67-kt59/data). The boxplot demonstrates numerical inspection scores, the scatterplot compares mean scores for three different cuisines, and the bar chart illustrates mean scores for popular cuisines with pest-related violations. 
 ```{r}
 borough = nyc_inspections %>% distinct(borough) %>% pull()
 
@@ -106,8 +106,7 @@ radioButtons("grade", label = h3("Choose grade"),
 Row
 -----------------------------------------------------------------------
 
-### Chart A
-
+### Boxplot 
 ```{r boxplot}
 renderPlotly({
     
@@ -125,7 +124,7 @@ nyc_inspections %>%
 Row {.tabset .tabset-fade}
 -----------------------------------------------------------------------
 
-### Chart B
+### Scatterplot 
 
 ```{r scatterplot}
 renderPlotly({
@@ -140,7 +139,7 @@ nyc_inspections %>%
 })
 ```
 
-### Chart C
+### Bar chart 
 
 ```{r barplot}
 renderPlotly({ 
