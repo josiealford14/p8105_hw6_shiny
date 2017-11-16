@@ -80,10 +80,6 @@ nyc_inspections = get_all_inspections(url) %>%
          score > "0") %>% 
 sample_n(20000)
 ##final dataset
-
-
-
-
 ```
 
 
@@ -95,7 +91,7 @@ borough = nyc_inspections %>% distinct(borough) %>% pull()
 
 # selectInput widget
 selectInput("borough", label = h3("Select borough"),
-            choices = boroughs, selected = "Bronx")
+            choices = borough, selected = "Bronx")
 
   
 grade = nyc_inspections %>% distinct(grade) %>% pull()
@@ -113,10 +109,6 @@ Row
 ### Chart A
 
 ```{r boxplot}
-# renderPrint({ 
-#   input$boro_choice
-# })
-
 renderPlotly({
     
 nyc_inspections %>% 
@@ -169,6 +161,7 @@ nyc_inspections %>%
                                                      TRUE))) %>%
   inner_join(top_cuisines, by = "cuisine_description") %>%
   mutate(cuisine_description = fct_reorder(cuisine_description, score)) %>%
+  mutate(cuisine_description = fct_infreq(cuisine_description)) %>%
   group_by(cuisine_description, grade) %>%
   summarize(mean_score = mean(score)) %>%
   plot_ly(x = ~cuisine_description, y = ~mean_score, color = ~grade, type = "bar")
