@@ -95,7 +95,7 @@ boroughs = nyc_inspections %>% distinct(borough) %>% pull()
 
 # selectInput widget
 selectInput("borough", label = h3("Select borough"),
-            choices = borough, selected = "Bronx")
+            choices = boroughs, selected = "Bronx")
 
   
 grade = nyc_inspections %>% distinct(grade) %>% pull()
