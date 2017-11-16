@@ -5,6 +5,6 @@ account: fta2112
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 236318
-bundleId: 1079436
+bundleId: 1079497
 url: https://fta2112.shinyapps.io/p8105_hw6_shiny/
-when: 1510857704.36831
+when: 1510858935.58089
