@@ -77,7 +77,9 @@ nyc_inspections = get_all_inspections(url) %>%
   select(camis, year, month, day, borough, name, cuisine_description, score, grade, 
          violation_description) %>% 
   filter(year == "2016",
-         score > "0")
+         score > "0",
+         grade == "A",
+         borough == "Bronx")
 ##final dataset
 
 
@@ -90,25 +92,19 @@ Column {.sidebar}
 -----------------------------------------------------------------------
 
 ```{r}
-boros = airbnb_data %>% distinct(boro) %>% pull()
+boroughs = nyc_inspections %>% distinct(borough) %>% pull()
 
 # selectInput widget
-selectInput("boro_choice", label = h3("Select boro"),
-            choices = boros, selected = "Manhattan")
+selectInput("borough", label = h3("Select borough"),
+            choices = borough, selected = "Bronx")
 
-max_price = 1000
-min_price = airbnb_data %>% distinct(price) %>% min()
   
-# sliderInput widget
-sliderInput("price_range", label = h3("Choose price range"), min = min_price, 
-        max = max_price, value = c(100, 400))
-
-room_choice = airbnb_data %>% distinct(room_type) %>% pull()
+grade = nyc_inspections %>% distinct(grade) %>% pull()
 
 # radioButtons widget
-radioButtons("room_choice", label = h3("Choose room type"),
-    choices = room_choice, 
-    selected = "Entire home/apt")
+radioButtons("grade", label = h3("Choose grade"),
+    choices = grade, 
+    selected = "A")
 ```
 
 
@@ -117,23 +113,22 @@ Row
 
 ### Chart A
 
-```{r}
+```{r boxplot}
 # renderPrint({ 
 #   input$boro_choice
 # })
 
 renderPlotly({
-    airbnb_data %>%
-    filter(boro == input$boro_choice, 
-           price %in% input$price_range[1]:input$price_range[2],
-           room_type == input$room_choice) %>%
-    mutate(text_label = str_c("Price: $", price, '\nRating: ', rating)) %>% 
-    plot_ly(x = ~longitude, y = ~latitude, type = "scatter", mode = "markers",
-          alpha = 0.5, 
-          color = ~price,
-          text = ~text_label)
+    
+nyc_inspections %>% 
+  filter(grade == input$grade,
+         borough == input$borough) %>% 
+  unique() %>% 
+  mutate(borough = fct_reorder(borough, score)) %>% 
+  group_by(borough, name) %>% 
+  plot_ly(y = ~score, color = ~borough, type = "box",
+          colors = "Set2")
 })
-
 ```
 
 Row {.tabset .tabset-fade}
@@ -141,36 +136,44 @@ Row {.tabset .tabset-fade}
 
 ### Chart B
 
-```{r}
+```{r scatterplot}
 renderPlotly({
-  airbnb_data %>% 
-  count(neighbourhood) %>% 
-  mutate(neighbourhood = fct_reorder(neighbourhood, n)) %>% 
-  plot_ly(x = ~neighbourhood, y = ~n, color = ~neighbourhood, type = "bar")
+nyc_inspections %>% 
+  filter(cuisine_description %in% c("Chicken", "Hamburgers", "Vegetarian"),
+        grade == input$grade,
+        borough == input$borough  ) %>%
+  unique() %>% 
+  group_by(month, cuisine_description) %>% 
+  summarize(mean_score = mean(score)) %>% 
+  plot_ly(x = ~month, y = ~mean_score, color = ~cuisine_description, type = "scatter") 
 })
 ```
 
 ### Chart C
 
-```{r}
-renderPlotly({ 
-  common_neighborhoods =
-    airbnb_data %>% 
-    filter(boro == input$boro_choice,
-           price %in% input$price_range[1]:input$price_range[2],
-           room_type == input$room_choice) %>%
-    count(neighbourhood, sort = TRUE) %>% 
-    top_n(8) %>% 
-    select(neighbourhood)
+```{r barplot}
 
-  airbnb_data %>%
-    filter(boro == input$boro_choice,
-                          price %in% input$price_range[1]:input$price_range[2],
-                          room_type == input$room_choice) %>%
-    inner_join(., common_neighborhoods, by = "neighbourhood") %>% 
-    plot_ly(y = ~price, color = ~neighbourhood, type = "box",
-          colors = "Set2")
-  
+renderPlotly({ 
+##addtl dataset for josie
+top_cuisines = nyc_inspections %>%
+  count(cuisine_description, sort = TRUE) %>% 
+  top_n(8) %>% 
+  select(cuisine_description) 
+
+
+nyc_inspections %>% 
+  filter(grade == input$grade,
+         borough == input$borough) %>% 
+  filter(str_detect(violation_description, regex("mice", ignore_case = TRUE)) |
+           str_detect(violation_description, regex("flies", ignore_case = TRUE))
+         | str_detect(violation_description, regex("roach", ignore_case =
+                                                     TRUE))) %>%
+  inner_join(top_cuisines, by = "cuisine_description") %>%
+  mutate(cuisine_description = fct_reorder(cuisine_description, score)) %>%
+  group_by(cuisine_description, grade) %>%
+  summarize(mean_score = mean(score)) %>%
+  plot_ly(x = ~cuisine_description, y = ~mean_score, color = ~grade, type = "bar")
 })
+
 ```
 
